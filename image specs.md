@@ -32,6 +32,8 @@ off-white `#F7F5F3`. Shadows are always warm charcoal, never neutral black.
 | Explore card art | `public/sites/kimi-com-185e587f/root-8a5edab2/cards/*.png` | JPEG | 16:9, ≥1000px wide | 234×137 / 150×88 | ⚠️ Kimi content |
 | Showcase icons | `public/sites/kimi-com-185e587f/root-8a5edab2/showcase/*.svg` | SVG | vector | 24×24 | ⚠️ 2 now orphaned |
 | Registry icons | `public/sites/kimi-com-185e587f/root-8a5edab2/icons/*.svg` | inline SVG | vector | 18/20/28px | ✅ tokenised |
+| Plugin logos | `public/sites/kimi-com-185e587f/root-8a5edab2/plugins/<slug>.svg` | SVG or PNG | 128×128 | 40×40 | ❌ monogram fallback |
+| Self-growth clip | `public/sites/kimi-com-185e587f/root-8a5edab2/video/self-growth.webm` | WebM + MP4 | 1080×624 | ~540×308 | ⚠️ animated in code instead |
 
 Masters live in `src/UI Components/` and are **not served** — they are the
 sources the build script reads: `fennic ai icon.png` (1448×1086, note it is 4:3
@@ -290,6 +292,87 @@ is stamped DO NOT EDIT BY HAND and overwritten on every run).
   per animation layer). A re-scrape that reformats those attributes fails the
   build loudly rather than silently shipping a black-on-black avatar.
 
+## 9. Plugin logos — not shipped, monogram fallback in place
+
+**Path to create** `public/sites/kimi-com-185e587f/root-8a5edab2/plugins/<slug>.svg`
+**Consumed by** the `logo` field on each entry in `src/lib/workspace/catalog.ts`,
+rendered by `PluginCard` in the workspace panel's Plugins tab at 40×40.
+
+No entry sets `logo` today, so all eighteen render `MonogramTile` — two initials
+on the accent wash. That is deliberate, not a stub: these are third-party brands
+(GitHub, Figma, Stripe, Wind, Caixin, PubMed …) and inventing a mark for someone
+else's company is worse than plainly not having one. Add real files only where
+you have the right to use them.
+
+- **Format** SVG where the vendor publishes one; PNG at 128×128 otherwise. Most
+  brand kits ship SVG.
+- **Intrinsic** 128×128 — 3.2× the 40px render, which covers a 3× phone.
+- **Transparency** Required. The card supplies the tile: `--fennic-border` ring
+  on `--fennic-accent-soft`. A logo with its own white square will read as a
+  bright patch in dark mode.
+- **Safe padding** Keep the mark inside the centre 80% (≈13px of the 128 clear on
+  each side). The tile has a 10px radius at render size and corners get clipped.
+- **Light/dark behaviour** This is the trap. Vendor logos are usually authored
+  for light backgrounds and a monochrome black mark vanishes on `#1C1613`.
+  Options, best first: (a) use the vendor's own light-on-dark variant and ship
+  both as `<slug>.svg` / `<slug>-dark.svg`, (b) use a full-colour mark that
+  clears both, (c) leave it on the monogram, which is already correct in both.
+- **Minimum legible size** 24px. Below that the tile is more legible than any
+  logo, so keep the monogram for compact lists.
+- **Art direction** None to apply — these are other people's marks, used as
+  published. Do not re-tint them to the Fennic palette; that misrepresents them.
+
+## 10. Self-growth clip — animated in code, not shipped
+
+**Paths to create** `…/root-8a5edab2/video/self-growth.webm` and `…/self-growth.mp4`
+**Consumed by** `SelfGrowthMedia`'s optional `videoSrc` prop, on the My Fennic
+tab beside "Fennic can now learn and grow on its own".
+
+The reference for this panel is a short looping video of a dot matrix pulsing
+around a bright core. There is no clip in the repo and no encoder on this machine
+(`ffmpeg` is absent), so rather than point a `<video>` at a 404 the component
+draws the same motion natively: 209 SVG circles in five distance bands, a 6s
+breathe on the group and a low-amplitude shimmer on the inner bands. It is
+deterministic (index arithmetic, never `Math.random()`) so it cannot hydrate
+differently from the server render.
+
+**To switch to a real clip:** drop the files in and pass the prop —
+
+```tsx
+<SelfGrowthMedia videoSrc="/sites/kimi-com-185e587f/root-8a5edab2/video/self-growth.webm" />
+```
+
+in `MyFennicTab.tsx`. The component keeps the drawn animation as the zero-config
+path, so neither branch can render an empty box.
+
+- **Format** WebM (VP9) as the primary, MP4 (H.264 High) as the fallback — Safari
+  still wants MP4. Ship both; the component takes one `src`, so widen it to a
+  `<source>` pair when you add the second file.
+- **Intrinsic** 1080×624 (the drawn version's 532×308 viewBox at 2×). Loop length
+  4–8s, seamless — a visible cut is worse than no motion.
+- **Weight** Keep each under 400 KB. It autoplays on a settings-ish panel; it is
+  not worth a megabyte.
+- **Attributes** `autoPlay muted loop playsInline` — all four. Without `muted`
+  and `playsInline`, iOS refuses to autoplay and shows a play button instead.
+- **Transparency** None; encode the ground in. But then it is ground-specific,
+  which is the catch below.
+- **Light/dark behaviour** The real problem with using a video here. A clip bakes
+  its background, and this panel is `--fennic-ground` — `#F7F5F3` in light,
+  `#1C1613` in dark. One clip cannot serve both: on the wrong ground it reads as
+  a rectangle pasted onto the card. So either ship two files and pick with a
+  `matchMedia("(prefers-color-scheme: dark)")` read, or keep the drawn version,
+  which follows the tokens for free. The drawn version is recommended for exactly
+  this reason.
+- **Reduced motion** Honour it. The drawn version already does, via
+  `@media (prefers-reduced-motion: reduce)`. A video needs the same treatment —
+  drop `autoPlay` and show the poster frame.
+- **Art direction** Terracotta accent body, a small cream specular highlight
+  off-centre, and an outer field that recedes to almost nothing so the shape
+  reads as a ball rather than a grid. Getting that falloff wrong was the one real
+  defect in the drawn version: a fixed low alpha is invisible on off-white and
+  clearly visible on charcoal, so the field uses `--fennic-placeholder-bg`, which
+  is defined per mode to be barely-there on either.
+
 ---
 
 ## Do this next
@@ -305,6 +388,10 @@ Ordered by what is most visibly wrong today.
    80% maskable safe area, then a `webmanifest` to point at it.
 4. **Explore card art** — swap Kimi's 21 screenshots for Fennic outputs as they
    exist. Cosmetic until the site is public.
+5. **Plugin logos** — §9. Optional: the monogram tiles are correct in both modes,
+   so this is a polish item, and only for vendors whose marks you may use.
+6. **Self-growth clip** — §10. Also optional, and arguably a downgrade: a video
+   bakes its background and this panel's ground flips with the colour scheme.
 
 Done: the dark-mode wordmark. It shipped as `fennic-text-dark.png` plus the
 `<picture>` swap described in section 2, and `scripts/drive-kimi-clone.mjs`

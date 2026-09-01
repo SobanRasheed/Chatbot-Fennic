@@ -4,7 +4,6 @@
 // Owns ALL page state: sidebar collapse, mobile drawer, lazy explore mount, FAB visibility.
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import AppShell from "./AppShell";
 import Composer from "./Composer";
 import ShortcutPills from "./ShortcutPills";
@@ -12,23 +11,12 @@ import ExploreButton from "./ExploreButton";
 import { ExploreContent } from "./InspirationSection";
 import FloatingChatButton from "./FloatingChatButton";
 import FooterBar from "./FooterBar";
+import Wordmark from "./Wordmark";
 import { KimiIcon } from "./icons";
 
-// The hero wordmark: Fennic in place of Kimi's "KIMI" doodle, sized so its ink
-// matches the doodle's measured 154×44 — see scripts/brand-fennic-assets.mjs.
-// The bitmap master, not the traced SVG: the tracer punched grain into the
-// letterforms that was visible at render size.
-//
-// Two files, one per mode. This is the only brand asset with no ground of its
-// own, so a single ink tone cannot serve both: charcoal #2C2320 vanishes on the
-// dark panel and warm off-white #F7F5F3 vanishes on the light one. The pair is
-// pixel-aligned (same crop, same geometry, same orange dot), so the swap shows
-// only as a change of ink. `prefers-color-scheme` is the right hook because the
-// palette in globals.css keys off it too — there is no theme toggle.
-const WORDMARK_SRC =
-  "/sites/kimi-com-185e587f/root-8a5edab2/brand/fennic-text.png";
-const WORDMARK_DARK_SRC =
-  "/sites/kimi-com-185e587f/root-8a5edab2/brand/fennic-text-dark.png";
+// The hero wordmark now lives in Wordmark.tsx — the dark-mode swap is subtle
+// enough (and was wrong once) that it should exist in exactly one place, and the
+// publisher-mode screens need the same markup.
 
 export default function KimiHomePage() {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -113,25 +101,7 @@ export default function KimiHomePage() {
             <div className="flex flex-col">
               <div className="flex h-[calc((100vh_-_271px)_/_2)] flex-col items-center justify-end md:h-[calc((100vh_-_294px)_/_2)]">
                 <div className="mb-8 flex w-full justify-center">
-                  {/* <picture> rather than two <Image>s: Tailwind's `dark:`
-                      variant is class-based (&:is(.dark *)) and nothing sets
-                      that class, so only a media query resolves here. The
-                      <source> serves the raw PNG — 26 KB, and the <img> below
-                      it keeps next/image's optimisation for the light path. */}
-                  <picture>
-                    <source
-                      media="(prefers-color-scheme: dark)"
-                      srcSet={WORDMARK_DARK_SRC}
-                    />
-                    <Image
-                      src={WORDMARK_SRC}
-                      alt="Fennic"
-                      width={166}
-                      height={44}
-                      priority
-                      className="h-[37px] w-[139px] md:h-[44px] md:w-[166px]"
-                    />
-                  </picture>
+                  <Wordmark priority />
                 </div>
               </div>
               <div className="flex shrink flex-col items-center justify-center">

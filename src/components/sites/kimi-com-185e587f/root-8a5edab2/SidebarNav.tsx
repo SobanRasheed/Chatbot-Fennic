@@ -4,6 +4,7 @@
 // docs/research/kimi-com-185e587f/root-8a5edab2/components/SidebarNav.md
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import type { KimiNavItem } from "@/types/kimi-com-185e587f";
 import { KimiIcon, type KimiIconName } from "./icons";
 
@@ -22,15 +23,28 @@ const MORE_ITEMS = [
 const ROW_TRANSITION =
   "transition-[background-color,color,box-shadow] duration-150 hover:bg-fennic-hover";
 
-function NavItem({ item }: { item: KimiNavItem & { icon: KimiIconName } }) {
+function NavItem({
+  item,
+  active,
+}: {
+  item: KimiNavItem & { icon: KimiIconName };
+  active: boolean;
+}) {
   return (
     <a
       href={item.href}
-      className={`block w-full rounded-[12px] text-fennic-primary ${ROW_TRANSITION}`}
+      aria-current={active ? "page" : undefined}
+      className={`block w-full rounded-[12px] text-fennic-primary ${ROW_TRANSITION} ${
+        active ? "bg-fennic-accent-soft" : ""
+      }`}
     >
       <span className="flex h-10 items-center gap-1.5 px-2">
         <KimiIcon name={item.icon} size={18} />
-        <span className="flex-1 overflow-hidden text-sm leading-5 font-normal whitespace-nowrap text-ellipsis">
+        <span
+          className={`flex-1 overflow-hidden text-sm leading-5 whitespace-nowrap text-ellipsis ${
+            active ? "font-medium" : "font-normal"
+          }`}
+        >
           {item.label}
         </span>
       </span>
@@ -42,13 +56,17 @@ export default function SidebarNav() {
   // more-list is expanded on load; Projects section starts expanded.
   const [moreOpen, setMoreOpen] = useState(true);
   const [projectsOpen, setProjectsOpen] = useState(true);
+  // The reference highlights whichever surface you are on. Exact match, not
+  // prefix: every route here is a single segment, and a prefix test would light
+  // up two rows the moment one path becomes another's parent.
+  const pathname = usePathname();
 
   return (
     <nav className="flex flex-col gap-3 pb-2 pl-2 pr-2">
       {/* Section 1 — main list */}
       <div className="flex flex-col">
         {TOP_ITEMS.map((item) => (
-          <NavItem key={item.href} item={item} />
+          <NavItem key={item.href} item={item} active={pathname === item.href} />
         ))}
         {/* text-left: <button> keeps the UA's center alignment (Tailwind
             preflight does not reset it), which would offset the label
@@ -78,7 +96,7 @@ export default function SidebarNav() {
         >
           <div className="flex flex-col overflow-hidden">
             {MORE_ITEMS.map((item) => (
-              <NavItem key={item.href} item={item} />
+              <NavItem key={item.href} item={item} active={pathname === item.href} />
             ))}
           </div>
         </div>

@@ -5,7 +5,8 @@
 //   2. node scripts/drive-kimi-clone.mjs
 //
 // Four passes: the desktop homepage, the nav purge + the five subpages, the
-// light/dark palette, and the mobile drawer.
+// My Fennic workspace panel (three tabs, all backend-fed), the light/dark
+// palette, and the mobile drawer.
 //
 // Env: CLONE_URL (default http://localhost:3000) · HEADED=1 to watch it run
 //      SLOWMO=<ms> pacing for headed runs (default 250) · KEEP_OPEN=<seconds>
@@ -80,13 +81,17 @@ const scrollTop = (page) => scroller(page).evaluate((el) => Math.round(el.scroll
 // this is the cheapest reliable "the page is interactive now" signal. Without
 // it, an early screenshot lands mid-hydration and Playwright's caret-hiding
 // inline style shows up as a hydration mismatch in the console.
-const hydrated = (page) =>
+//
+// Takes the selector because not every route has a composer: the workspace panel
+// hydrates around its tablist, and waiting on a textarea that is not there would
+// just time out.
+const hydrated = (page, selector = 'textarea[aria-label="Chat message"]') =>
   page.waitForFunction(
-    () => {
-      const el = document.querySelector('textarea[aria-label="Chat message"]');
+    (target) => {
+      const el = document.querySelector(target);
       return !!el && Object.keys(el).some((key) => key.startsWith("__react"));
     },
-    undefined,
+    selector,
     { timeout: 90_000 },
   );
 
@@ -259,6 +264,30 @@ async function mobilePass(browser) {
     return `x=${await asideX(page)}`;
   });
 
+  await step("workspace panel reflows for one column", async () => {
+    await page.goto(`${BASE_URL}/my-fennic?tab=plugins`, {
+      waitUntil: "domcontentloaded",
+    });
+    await hideDevOverlay(page);
+    const cards = page.locator('[role="tabpanel"] h3');
+    if (!(await until(async () => (await cards.count()) >= 18, { timeout: 90_000 })))
+      throw new Error(`only ${await cards.count()} plugin cards on mobile`);
+    await hydrated(page, '[role="tablist"]');
+    // One column: every card shares a left edge, and none overflows the viewport.
+    const boxes = await cards.evaluateAll((nodes) =>
+      nodes.slice(0, 4).map((node) => {
+        const box = node.getBoundingClientRect();
+        return { x: Math.round(box.x), right: Math.round(box.right) };
+      }),
+    );
+    const lefts = new Set(boxes.map((box) => box.x));
+    if (lefts.size !== 1)
+      throw new Error(`cards did not stack: left edges ${[...lefts].join(", ")}`);
+    const overflow = boxes.find((box) => box.right > 390);
+    if (overflow) throw new Error(`a card overflows to x=${overflow.right}`);
+    return `stacked at x=${[...lefts][0]}, ${await shot(page, "mobile-workspace")}`;
+  });
+
   await context.close();
 }
 
@@ -373,8 +402,225 @@ async function themePass(browser) {
       return file;
     });
 
+    await step(`${scheme} self-growth orb reads as an orb, not a grid`, async () => {
+      await page.goto(`${BASE_URL}/my-fennic`, { waitUntil: "domcontentloaded" });
+      await hideDevOverlay(page);
+      await page.getByRole("heading", { level: 1 }).waitFor({ timeout: 90_000 });
+      await hydrated(page, '[role="tablist"]');
+      // The orb is legible only because its bands differ, and a fixed alpha reads
+      // very differently on the two grounds — that is what made the first cut a
+      // rectangle of confetti in light mode and a busy grid in dark. So assert
+      // the structure per scheme rather than trusting one visual check.
+      const bands = await page.evaluate(() => {
+        const dots = [...document.querySelectorAll("svg circle")];
+        if (dots.length === 0) return null;
+        const paints = new Set(
+          dots.map((dot) => {
+            const style = getComputedStyle(dot);
+            return `${style.fill}@${dot.getAttribute("r")}`;
+          }),
+        );
+        return { dots: dots.length, paints: paints.size };
+      });
+      if (!bands) throw new Error("no orb dots rendered");
+      if (bands.dots !== 209)
+        throw new Error(`orb has ${bands.dots} dots, expected 209 (19x11)`);
+      if (bands.paints < 4)
+        throw new Error(`only ${bands.paints} distinct dot paints — the bands collapsed`);
+      const promo = page.locator("h2", { hasText: "learn and grow on its own" });
+      return `${bands.dots} dots, ${bands.paints} paints, ${await shotOf(
+        promo.locator("xpath=../.."),
+        `orb-${scheme}`,
+      )}`;
+    });
+
     await context.close();
   }
+}
+
+// The My Fennic workspace panel: three tabs, all three fed by
+// /api/workspace/*. This pass is the only one that exercises a mutation, so it
+// puts the catalog back the way it found it before it leaves.
+async function workspacePass(browser) {
+  console.log("\nworkspace panel — 1440x900");
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  watchPage(page, "workspace");
+  await page.goto(`${BASE_URL}/my-fennic`, { waitUntil: "domcontentloaded" });
+  await hideDevOverlay(page);
+
+  const tab = (name) => page.getByRole("tab", { name, exact: true });
+  const heading = page.getByRole("heading", { level: 1 });
+
+  await step("my-fennic tab paints heatmap + stats", async () => {
+    await heading.waitFor({ timeout: 90_000 });
+    await hydrated(page, '[role="tablist"]');
+    const title = (await heading.innerText()).trim();
+    if (!/’s Fennic$/.test(title)) throw new Error(`h1 reads "${title}"`);
+    const stats = await page.getByText(/Fennic has been with you for/).innerText();
+    const numbers = stats.match(/\d+/g) ?? [];
+    if (numbers.length < 3) throw new Error(`stats line has no numbers: "${stats}"`);
+    if (numbers.includes("0")) throw new Error(`a stat rendered as 0: "${stats}"`);
+    const cells = await page
+      .locator('[role="img"][aria-label*="oldest first"] span[title]')
+      .count();
+    if (cells !== 371) throw new Error(`heatmap has ${cells} cells, expected 371`);
+    // All five buckets must be on screen, or a shade of the palette is dead.
+    const shades = await page.evaluate(() => {
+      const grid = document.querySelector('[role="img"][aria-label*="oldest first"]');
+      const seen = new Set();
+      for (const cell of grid.querySelectorAll("span[title]")) {
+        const style = getComputedStyle(cell);
+        seen.add(`${style.backgroundColor}@${style.opacity}`);
+      }
+      return [...seen];
+    });
+    if (shades.length < 5)
+      throw new Error(`only ${shades.length} heatmap shades render: ${shades.join(", ")}`);
+    return `${cells} cells, ${shades.length} shades, ${await shot(page, "workspace-my-fennic")}`;
+  });
+
+  await step("Growth switches the series", async () => {
+    const first = await page
+      .locator('[role="img"][aria-label*="oldest first"] span[title]')
+      .first()
+      .getAttribute("title");
+    await page.getByRole("tab", { name: "Growth" }).click();
+    if (!(await until(async () => {
+      const next = await page
+        .locator('[role="img"][aria-label*="oldest first"] span[title]')
+        .first()
+        .getAttribute("title");
+      return next !== first;
+    })))
+      throw new Error("the grid did not change when Growth was selected");
+    const caption = await page.getByText(/adds to what it knows/).isVisible();
+    if (!caption) throw new Error("growth caption did not swap in");
+    await page.getByRole("tab", { name: "Closeness" }).click();
+    return "closeness ⇄ growth";
+  });
+
+  await step("self-growth toggle round-trips through the API", async () => {
+    const button = page.getByRole("button", { name: "Enable self-growth" }).first();
+    await button.click();
+    const on = page.getByRole("button", { name: "Self-growth on" });
+    if (!(await until(() => on.isVisible(), { timeout: 8000 })))
+      throw new Error("button never flipped to the enabled state");
+    const persisted = await page.evaluate(async () => {
+      const res = await fetch("/api/workspace/profile");
+      return (await res.json()).profile.selfGrowthEnabled;
+    });
+    if (persisted !== true) throw new Error("the server did not record the change");
+    // Put it back so a re-run starts from the same state.
+    await page.getByRole("button", { name: "Turn off self-growth" }).click();
+    await until(async () =>
+      (await page.getByRole("button", { name: "Enable self-growth" }).count()) > 0,
+    );
+    return "off → on → off, server agreed";
+  });
+
+  await step("plugins tab lists the catalog and filters server-side", async () => {
+    await tab("Plugins").click();
+    const cards = page.locator('[role="tabpanel"] h3');
+    if (!(await until(async () => (await cards.count()) >= 18, { timeout: 25_000 })))
+      throw new Error(`only ${await cards.count()} plugins rendered`);
+    const all = await cards.count();
+    await page.getByRole("tab", { name: "Finance", exact: true }).click();
+    if (!(await until(async () => (await cards.count()) < all && (await cards.count()) > 0)))
+      throw new Error(`Finance filter left ${await cards.count()} of ${all}`);
+    const names = (await cards.allInnerTexts()).join(" / ");
+    const file = await shot(page, "workspace-plugins");
+    await page.getByRole("tab", { name: "All", exact: true }).click();
+    await until(async () => (await cards.count()) === all);
+    return `${all} total, Finance → ${names}, ${file}`;
+  });
+
+  await step("plugin search narrows the grid", async () => {
+    const cards = page.locator('[role="tabpanel"] h3');
+    await page.getByPlaceholder("Search the directory").fill("biomedical");
+    if (!(await until(async () => (await cards.count()) === 1, { timeout: 10_000 })))
+      throw new Error(`search returned ${await cards.count()} results, expected 1`);
+    const hit = (await cards.first().innerText()).trim();
+    await page.getByPlaceholder("Search the directory").fill("");
+    return `"biomedical" → ${hit}`;
+  });
+
+  await step("installing a plugin persists and shows under Installed", async () => {
+    const cards = page.locator('[role="tabpanel"] h3');
+    await page.getByRole("button", { name: /^Install GitHub$/ }).click();
+    if (!(await until(async () => {
+      const state = await page.evaluate(async () => {
+        const res = await fetch("/api/workspace/plugins?category=Installed");
+        return (await res.json()).plugins.map((p) => p.slug);
+      });
+      return state.includes("github");
+    }, { timeout: 10_000 })))
+      throw new Error("the install never reached the server");
+    await page.getByRole("tab", { name: "Installed", exact: true }).click();
+    if (!(await until(async () => (await cards.count()) === 1)))
+      throw new Error(`Installed shows ${await cards.count()} rows, expected 1`);
+    const file = await shot(page, "workspace-plugins-installed");
+    // Restore.
+    await page.getByRole("button", { name: /^Remove GitHub$/ }).click();
+    await until(async () => (await cards.count()) === 0, { timeout: 10_000 });
+    await page.getByRole("tab", { name: "All", exact: true }).click();
+    return file;
+  });
+
+  await step("skills tab opens on the Added empty state", async () => {
+    await tab("Skills").click();
+    const empty = page.getByText("You have not added a skill yet");
+    if (!(await until(() => empty.isVisible(), { timeout: 25_000 })))
+      throw new Error("the Added empty state did not render");
+    if (!(await page.getByText("Document to skills").isVisible()))
+      throw new Error("the upload promo is missing");
+    return shot(page, "workspace-skills");
+  });
+
+  await step("Featured fills the skills grid", async () => {
+    const cards = page.locator('[role="tabpanel"] h3');
+    await page.getByRole("tab", { name: "Featured", exact: true }).click();
+    if (!(await until(async () => (await cards.count()) > 0, { timeout: 10_000 })))
+      throw new Error("Featured returned nothing");
+    const count = await cards.count();
+    const file = await shot(page, "workspace-skills-featured");
+    await page.getByRole("tab", { name: "Added", exact: true }).click();
+    return `${count} skills, ${file}`;
+  });
+
+  await step("Customize menu opens and dismisses on Escape", async () => {
+    const trigger = page.getByRole("button", { name: /^Customize$/ });
+    await trigger.click();
+    const item = page.getByRole("menuitem", { name: /Create a skill/ });
+    await item.waitFor({ timeout: 5000 });
+    const file = await shot(page, "workspace-skills-customize");
+    await page.keyboard.press("Escape");
+    if (!(await until(async () => (await item.count()) === 0)))
+      throw new Error("Escape did not close the menu");
+    return file;
+  });
+
+  await step("?tab= deep-links a tab, and the tab row keeps the URL honest", async () => {
+    await page.goto(`${BASE_URL}/my-fennic?tab=skills`, { waitUntil: "domcontentloaded" });
+    await hideDevOverlay(page);
+    const active = page.locator('[role="tab"][aria-selected="true"]').first();
+    await active.waitFor({ timeout: 90_000 });
+    await hydrated(page, '[role="tablist"]');
+    if ((await active.innerText()).trim() !== "Skills")
+      throw new Error(`?tab=skills selected "${(await active.innerText()).trim()}"`);
+    await tab("Plugins").click();
+    if (!(await until(async () => new URL(page.url()).searchParams.get("tab") === "plugins")))
+      throw new Error(`URL stayed at ${page.url()}`);
+    return new URL(page.url()).search;
+  });
+
+  await step("close returns to the composer", async () => {
+    await page.getByRole("button", { name: "Close workspace" }).click();
+    await page.getByRole("textbox", { name: "Chat message" }).waitFor({ timeout: 90_000 });
+    return new URL(page.url()).pathname;
+  });
+
+  await context.close();
 }
 
 async function main() {
@@ -384,6 +630,7 @@ async function main() {
   try {
     await desktopPass(browser);
     await navPass(browser);
+    await workspacePass(browser);
     await themePass(browser);
     await mobilePass(browser);
     if (KEEP_OPEN > 0) {

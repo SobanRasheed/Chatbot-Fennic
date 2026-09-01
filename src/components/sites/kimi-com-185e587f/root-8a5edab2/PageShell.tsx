@@ -7,12 +7,12 @@
 // of that, so they share this: the same AppShell (fixed 240px aside, single
 // scroll container), the same 52px header row, then a normal document flow.
 //
-// Shell state lives here, mirroring KimiHomePage: the header trigger expands the
-// sidebar on desktop and opens the drawer on mobile.
+// Shell state lives in useAppShellState, shared with the workspace panel: the
+// header trigger expands the sidebar on desktop and opens the drawer on mobile.
 
-import { useCallback, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import AppShell from "./AppShell";
+import { useAppShellState } from "./useAppShellState";
 import { KimiIcon, type KimiIconName } from "./icons";
 
 export interface PageShellProps {
@@ -31,24 +31,21 @@ export default function PageShell({
   action,
   children,
 }: PageShellProps) {
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
-
-  const handleHeaderToggle = useCallback(() => {
-    if (window.matchMedia("(min-width: 1024px)").matches) {
-      setCollapsed(false);
-    } else {
-      setMobileNavOpen(true);
-    }
-  }, []);
+  const {
+    collapsed,
+    onCollapse,
+    mobileNavOpen,
+    onCloseMobileNav,
+    onHeaderToggle,
+    scrollContainerRef,
+  } = useAppShellState();
 
   return (
     <AppShell
       collapsed={collapsed}
-      onCollapse={() => setCollapsed(true)}
+      onCollapse={onCollapse}
       mobileNavOpen={mobileNavOpen}
-      onCloseMobileNav={() => setMobileNavOpen(false)}
+      onCloseMobileNav={onCloseMobileNav}
       scrollContainerRef={scrollContainerRef}
     >
       <div className="relative flex min-h-full flex-col">
@@ -56,7 +53,7 @@ export default function PageShell({
           <button
             type="button"
             aria-label="Open sidebar"
-            onClick={handleHeaderToggle}
+            onClick={onHeaderToggle}
             className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] text-fennic-primary transition-colors duration-150 hover:bg-fennic-hover ${
               collapsed ? "" : "lg:hidden"
             }`}
