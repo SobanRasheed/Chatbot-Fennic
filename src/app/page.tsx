@@ -1,9 +1,5 @@
-export default function Home() {
-  return (
-    <main className="flex min-h-screen items-center justify-center">
-      <p className="text-muted-foreground">
-        Clone target not yet built. Run <code className="font-mono text-foreground">/clone-website</code> to start.
-      </p>
-    </main>
-  );
+import KimiHomePage from "@/components/sites/kimi-com-185e587f/root-8a5edab2/KimiHomePage";
+
+export default function Page() {
+  return <KimiHomePage />;
 }

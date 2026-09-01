@@ -1,20 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "Website Clone",
-  description: "Pixel-perfect website clone",
+  title: "Kimi AI with K3 | Built for Agentic Coding & Knowledge Work",
+  description:
+    "Try Kimi K3 to build playable multiplayer and 3D games, create consulting grade slides, and run parallel tasks with Swarm and Goal to get more work done.",
+  icons: {
+    icon: [
+      { url: "/sites/favicon.ico", sizes: "any" },
+      { url: "/sites/favicon-light.ico", media: "(prefers-color-scheme: light)" },
+      { url: "/sites/favicon-dark.ico", media: "(prefers-color-scheme: dark)" },
+    ],
+    apple: "/sites/pwa-192.png",
+  },
 };
 
 export default function RootLayout({
@@ -23,11 +21,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en" className="h-full antialiased light">
+      <body className="min-h-full flex flex-col bg-kimi-ground">
+        {children}
+      </body>
     </html>
   );
 }
