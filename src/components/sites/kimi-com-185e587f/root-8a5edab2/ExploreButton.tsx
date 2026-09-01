@@ -18,9 +18,9 @@ export default function ExploreButton({ onExplore }: ExploreButtonProps) {
     <button
       type="button"
       onClick={onExplore}
-      className="flex h-[52px] w-full items-center justify-between rounded-t-[24px] px-4 pt-4 pb-3 transition-all duration-150 hover:bg-kimi-hover"
+      className="flex h-[52px] w-full items-center justify-between rounded-t-[24px] px-4 pt-4 pb-3 transition-all duration-150 hover:bg-fennic-hover"
     >
-      <span className="flex items-center gap-1.5 text-kimi-secondary">
+      <span className="flex items-center gap-1.5 text-fennic-secondary">
         <span className="relative block h-6 w-6 shrink-0">
           <Image
             src={`${ASSETS}/icons/icon-explore-light.svg`}
@@ -39,7 +39,7 @@ export default function ExploreButton({ onExplore }: ExploreButtonProps) {
         </span>
         <span className="text-sm leading-5">Explore inspiration</span>
       </span>
-      <span className="-mr-2 -mt-1 -mb-1 flex h-9 items-center gap-2 py-1 pr-2 pl-2.5 text-kimi-tertiary">
+      <span className="-mr-2 -mt-1 -mb-1 flex h-9 items-center gap-2 py-1 pr-2 pl-2.5 text-fennic-tertiary">
         <span className="text-sm">Scroll to explore</span>
         <KimiIcon name="explore-chevron" size={16} />
       </span>

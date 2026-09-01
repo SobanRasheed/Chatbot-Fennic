@@ -26,11 +26,11 @@ export default function AppShell({
   children,
 }: AppShellProps) {
   return (
-    <div className="flex h-screen bg-kimi-ground">
+    <div className="flex h-screen bg-fennic-ground">
       {/* aside — fixed; slides via translate. Same mechanism for desktop
           collapse (lg) and the mobile drawer (<lg). */}
       <aside
-        className={`fixed inset-y-0 left-0 z-30 w-[240px] bg-kimi-ground transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 z-30 w-[240px] bg-fennic-ground transition-transform duration-300 ease-in-out ${
           mobileNavOpen
             ? "max-lg:translate-x-0"
             : "max-lg:-translate-x-full"
@@ -43,14 +43,14 @@ export default function AppShell({
       <div
         aria-hidden
         onClick={onCloseMobileNav}
-        className={`fixed inset-0 z-[29] bg-black/30 transition-opacity duration-300 ease-in-out lg:hidden ${
+        className={`fixed inset-0 z-[29] bg-fennic-scrim transition-opacity duration-300 ease-in-out lg:hidden ${
           mobileNavOpen ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       />
 
       {/* main panel */}
       <div
-        className={`relative m-1.5 flex min-w-0 flex-1 overflow-hidden rounded-[12px] border border-kimi-border bg-kimi-panel transition-[margin-left] duration-300 ease-in-out ${
+        className={`relative m-1.5 flex min-w-0 flex-1 overflow-hidden rounded-[12px] border border-fennic-border bg-fennic-panel transition-[margin-left] duration-300 ease-in-out ${
           collapsed ? "lg:ml-1.5" : "lg:ml-[240px]"
         }`}
       >

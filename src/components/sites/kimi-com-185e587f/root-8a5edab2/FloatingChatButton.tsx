@@ -1,6 +1,6 @@
 "use client";
 
-// FloatingChatButton — "Chat with Kimi" back-to-top pill per
+// FloatingChatButton — "Chat with Fennic" back-to-top pill per
 // docs/research/kimi-com-185e587f/root-8a5edab2/components/FloatingChatButton.md
 // Visibility is computed by the page: scrollTop >= stickySpaceEl.offsetHeight.
 
@@ -59,14 +59,14 @@ export default function FloatingChatButton({
       <button
         type="button"
         onClick={onBackToTop}
-        className="relative flex h-11 w-[162px] items-center justify-center gap-1.5 rounded-[28px] border border-kimi-panel bg-white/70 pr-4 pl-3 text-kimi-primary shadow-kimi-floating transition-colors duration-150 hover:bg-white/90"
+        className="relative flex h-11 w-[186px] items-center justify-center gap-1.5 rounded-[28px] border border-fennic-panel bg-fennic-glass pr-4 pl-3 text-fennic-primary shadow-fennic-floating transition-colors duration-150 hover:bg-fennic-glass-strong"
       >
         <UpArrowIcon />
-        <span className="text-base font-medium">Chat with Kimi</span>
+        <span className="text-base font-medium">Chat with Fennic</span>
         {/* inset highlight overlay */}
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-[1px] rounded-[28px] shadow-[inset_0.5px_0.5px_1px_0_rgba(255,255,255,0.42)]"
+          className="pointer-events-none absolute inset-[1px] rounded-[28px] shadow-[inset_0.5px_0.5px_1px_0_var(--fennic-bevel)]"
         />
       </button>
     </div>

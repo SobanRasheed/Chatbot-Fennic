@@ -14,27 +14,39 @@
   --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
   --font-heading: var(--font-sans);
 
-  /* Kimi (kimi-com-185e587f) design tokens — extracted via getComputedStyle */
-  --color-kimi-ground: var(--kimi-ground);
-  --color-kimi-panel: var(--kimi-panel);
-  --color-kimi-primary: var(--kimi-text-primary);
-  --color-kimi-secondary: var(--kimi-text-secondary);
-  --color-kimi-tertiary: var(--kimi-text-tertiary);
-  --color-kimi-faint: var(--kimi-text-faint);
-  --color-kimi-border: var(--kimi-border);
-  --color-kimi-line: var(--kimi-line);
-  --color-kimi-hover: var(--kimi-hover);
-  --color-kimi-placeholder-bg: var(--kimi-placeholder-bg);
-  --color-kimi-send-disabled: var(--kimi-send-disabled);
-  --color-kimi-send-enabled: var(--kimi-send-enabled);
-  --color-kimi-icon-inverse: var(--kimi-icon-inverse);
-  --shadow-kimi-composer: 0 5px 16px -4px rgb(0 0 0 / 0.07);
-  --shadow-kimi-composer-focus: 0 4px 12px 0 rgb(0 0 0 / 0.03),
-    0 5px 16px -4px rgb(0 0 0 / 0.07);
-  --shadow-kimi-menu: inset 0 0 0 0.5px rgb(0 0 0 / 0.13),
-    0 4px 16px 0 rgb(0 0 0 / 0.1);
-  --shadow-kimi-floating: 0 4px 15px 2px rgb(0 0 0 / 0.15);
-  --ease-kimi-card: cubic-bezier(0.23, 1, 0.32, 1);
+  /* Fennic AI design tokens. Layout geometry is still the kimi-com-185e587f
+     clone's; only the palette is ours. Every value is an alias so light/dark
+     switch in one place (:root / .dark below) — never hardcode a colour in a
+     component, add a token here instead. */
+  --color-fennic-ground: var(--fennic-ground);
+  --color-fennic-panel: var(--fennic-panel);
+  --color-fennic-primary: var(--fennic-text-primary);
+  --color-fennic-secondary: var(--fennic-text-secondary);
+  --color-fennic-tertiary: var(--fennic-text-tertiary);
+  --color-fennic-faint: var(--fennic-text-faint);
+  --color-fennic-border: var(--fennic-border);
+  --color-fennic-line: var(--fennic-line);
+  --color-fennic-hover: var(--fennic-hover);
+  --color-fennic-placeholder-bg: var(--fennic-placeholder-bg);
+  --color-fennic-send-disabled: var(--fennic-send-disabled);
+  --color-fennic-send-enabled: var(--fennic-send-enabled);
+  --color-fennic-icon-inverse: var(--fennic-icon-inverse);
+  --color-fennic-accent: var(--fennic-accent);
+  --color-fennic-accent-soft: var(--fennic-accent-soft);
+  --color-fennic-cream: var(--fennic-cream);
+  --color-fennic-scrim: var(--fennic-scrim);
+  --color-fennic-glass: var(--fennic-glass);
+  --color-fennic-glass-strong: var(--fennic-glass-strong);
+
+  /* Warm shadows only — every umbra is deep charcoal (#1C1613), never neutral
+     black, so elevation reads as warm depth instead of a grey haze. */
+  --shadow-fennic-composer: var(--fennic-shadow-composer);
+  --shadow-fennic-composer-focus: var(--fennic-shadow-composer-focus);
+  --shadow-fennic-menu: var(--fennic-shadow-menu);
+  --shadow-fennic-floating: var(--fennic-shadow-floating);
+  --shadow-fennic-raise: var(--fennic-shadow-raise);
+  --ease-fennic-card: cubic-bezier(0.23, 1, 0.32, 1);
+
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -73,88 +85,222 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
-  /* Kimi light-theme tokens */
-  --kimi-ground: #fbfaf9;
-  --kimi-panel: #ffffff;
-  --kimi-text-primary: rgb(0 0 0 / 0.9);
-  --kimi-text-secondary: rgb(0 0 0 / 0.6);
-  --kimi-text-tertiary: rgb(0 0 0 / 0.45);
-  --kimi-text-faint: rgb(0 0 0 / 0.3);
-  --kimi-border: rgb(0 0 0 / 0.05);
-  --kimi-line: rgb(0 0 0 / 0.13);
-  --kimi-hover: rgb(0 0 0 / 0.03);
-  --kimi-placeholder-bg: rgb(0 0 0 / 0.05);
-  --kimi-send-disabled: rgb(0 0 0 / 0.15);
-  --kimi-send-enabled: rgb(0 0 0 / 0.9);
-  --kimi-icon-inverse: rgb(255 255 255 / 0.9);
+/* ── Fennic brand constants ─────────────────────────────────────────────────
+   Terracotta      #D8663A   accent, send button, focus rings
+   Cream           #F2D6B8   soft fills, secondary surfaces
+   Charcoal        #2C2320   light-mode ink / dark-mode cards
+   Deep charcoal   #1C1613   dark-mode ground, all shadow umbras
+   Warm off-white  #F7F5F3   light-mode ground / dark-mode ink
+   The text ramp is charcoal (light) or warm off-white (dark) at descending
+   alpha, so hovers, borders and dividers pick up the ground's warmth instead
+   of turning grey — the reason these are rgb(… / α) and not flat hexes.     */
 
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+:root {
+  color-scheme: light;
+
+  --fennic-terracotta: #d8663a;
+  --fennic-cream: #f2d6b8;
+  --fennic-charcoal: #2c2320;
+  --fennic-charcoal-deep: #1c1613;
+  --fennic-offwhite: #f7f5f3;
+
+  /* Light mode */
+  --fennic-ground: #f7f5f3;
+  --fennic-panel: #fffdfb;
+  --fennic-text-primary: #2c2320;
+  --fennic-text-secondary: #5f4f44;
+  --fennic-text-tertiary: rgb(44 35 32 / 0.52);
+  --fennic-text-faint: rgb(44 35 32 / 0.34);
+  --fennic-border: rgb(44 35 32 / 0.07);
+  --fennic-line: rgb(44 35 32 / 0.14);
+  --fennic-hover: rgb(216 102 58 / 0.08);
+  --fennic-placeholder-bg: rgb(44 35 32 / 0.06);
+  --fennic-send-disabled: rgb(44 35 32 / 0.18);
+  --fennic-send-enabled: #d8663a;
+  --fennic-icon-inverse: #fffdfb;
+  --fennic-accent: #d8663a;
+  --fennic-accent-soft: rgb(216 102 58 / 0.12);
+  --fennic-scrim: rgb(28 22 19 / 0.32);
+  --fennic-glass: rgb(255 253 251 / 0.72);
+  --fennic-glass-strong: rgb(255 253 251 / 0.92);
+  /* Inset top-left highlight on glass pills — lighter than the surface it sits on. */
+  --fennic-bevel: rgb(255 253 251 / 0.42);
+
+  --fennic-shadow-composer: 0 5px 16px -4px rgb(28 22 19 / 0.08);
+  --fennic-shadow-composer-focus: 0 4px 12px 0 rgb(28 22 19 / 0.04),
+    0 5px 16px -4px rgb(28 22 19 / 0.1);
+  --fennic-shadow-menu: inset 0 0 0 0.5px rgb(44 35 32 / 0.1),
+    0 4px 16px 0 rgb(28 22 19 / 0.1);
+  --fennic-shadow-floating: 0 4px 15px 2px rgb(28 22 19 / 0.14);
+  --fennic-shadow-raise: 0 2px 8px 0 rgb(28 22 19 / 0.06);
+
+  --background: #f7f5f3;
+  --foreground: #2c2320;
+  --card: #fffdfb;
+  --card-foreground: #2c2320;
+  --popover: #fffdfb;
+  --popover-foreground: #2c2320;
+  --primary: #d8663a;
+  --primary-foreground: #fffdfb;
+  --secondary: #f2d6b8;
+  --secondary-foreground: #2c2320;
+  --muted: #efe9e4;
+  --muted-foreground: #5f4f44;
+  --accent: #f2d6b8;
+  --accent-foreground: #2c2320;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --border: rgb(44 35 32 / 0.1);
+  --input: rgb(44 35 32 / 0.14);
+  --ring: #d8663a;
+  --chart-1: #d8663a;
+  --chart-2: #e28353;
+  --chart-3: #f2d6b8;
+  --chart-4: #5f4f44;
+  --chart-5: #2c2320;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #f7f5f3;
+  --sidebar-foreground: #2c2320;
+  --sidebar-primary: #d8663a;
+  --sidebar-primary-foreground: #fffdfb;
+  --sidebar-accent: rgb(216 102 58 / 0.08);
+  --sidebar-accent-foreground: #2c2320;
+  --sidebar-border: rgb(44 35 32 / 0.08);
+  --sidebar-ring: #d8663a;
 }
 
+/* Dark mode. `.dark` is the explicit opt-in; the media block below applies the
+   same values when the OS asks for dark and nothing has forced `.light`.
+   KEEP THE TWO BLOCKS IN SYNC — plain CSS cannot share one declaration list
+   across a class selector and a media query. */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  color-scheme: dark;
+
+  --fennic-ground: #1c1613;
+  --fennic-panel: #2c2320;
+  --fennic-text-primary: #f7f5f3;
+  --fennic-text-secondary: #b0a296;
+  --fennic-text-tertiary: rgb(247 245 243 / 0.45);
+  --fennic-text-faint: rgb(247 245 243 / 0.3);
+  --fennic-border: rgb(247 245 243 / 0.08);
+  --fennic-line: rgb(247 245 243 / 0.16);
+  --fennic-hover: rgb(226 131 83 / 0.14);
+  --fennic-placeholder-bg: rgb(247 245 243 / 0.07);
+  --fennic-send-disabled: rgb(247 245 243 / 0.2);
+  --fennic-send-enabled: #e28353;
+  --fennic-icon-inverse: #1c1613;
+  --fennic-accent: #e28353;
+  --fennic-accent-soft: rgb(226 131 83 / 0.18);
+  --fennic-scrim: rgb(10 7 6 / 0.6);
+  --fennic-glass: rgb(44 35 32 / 0.72);
+  --fennic-glass-strong: rgb(44 35 32 / 0.92);
+  --fennic-bevel: rgb(247 245 243 / 0.12);
+
+  --fennic-shadow-composer: 0 5px 16px -4px rgb(10 7 6 / 0.5);
+  --fennic-shadow-composer-focus: 0 4px 12px 0 rgb(10 7 6 / 0.3),
+    0 5px 16px -4px rgb(10 7 6 / 0.55);
+  --fennic-shadow-menu: inset 0 0 0 0.5px rgb(247 245 243 / 0.1),
+    0 4px 16px 0 rgb(10 7 6 / 0.55);
+  --fennic-shadow-floating: 0 4px 15px 2px rgb(10 7 6 / 0.55);
+  --fennic-shadow-raise: 0 2px 8px 0 rgb(10 7 6 / 0.4);
+
+  --background: #1c1613;
+  --foreground: #f7f5f3;
+  --card: #2c2320;
+  --card-foreground: #f7f5f3;
+  --popover: #2c2320;
+  --popover-foreground: #f7f5f3;
+  --primary: #e28353;
+  --primary-foreground: #1c1613;
+  --secondary: #3a2f29;
+  --secondary-foreground: #f7f5f3;
+  --muted: #3a2f29;
+  --muted-foreground: #b0a296;
+  --accent: #3a2f29;
+  --accent-foreground: #f7f5f3;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --border: rgb(247 245 243 / 0.1);
+  --input: rgb(247 245 243 / 0.15);
+  --ring: #e28353;
+  --chart-1: #e28353;
+  --chart-2: #d8663a;
+  --chart-3: #f2d6b8;
+  --chart-4: #b0a296;
+  --chart-5: #f7f5f3;
+  --sidebar: #1c1613;
+  --sidebar-foreground: #f7f5f3;
+  --sidebar-primary: #e28353;
+  --sidebar-primary-foreground: #1c1613;
+  --sidebar-accent: rgb(226 131 83 / 0.14);
+  --sidebar-accent-foreground: #f7f5f3;
+  --sidebar-border: rgb(247 245 243 / 0.08);
+  --sidebar-ring: #e28353;
+}
+
+@media (prefers-color-scheme: dark) {
+  /* Mirror of `.dark` — see the sync note above. */
+  :root:not(.light) {
+    color-scheme: dark;
+
+    --fennic-ground: #1c1613;
+    --fennic-panel: #2c2320;
+    --fennic-text-primary: #f7f5f3;
+    --fennic-text-secondary: #b0a296;
+    --fennic-text-tertiary: rgb(247 245 243 / 0.45);
+    --fennic-text-faint: rgb(247 245 243 / 0.3);
+    --fennic-border: rgb(247 245 243 / 0.08);
+    --fennic-line: rgb(247 245 243 / 0.16);
+    --fennic-hover: rgb(226 131 83 / 0.14);
+    --fennic-placeholder-bg: rgb(247 245 243 / 0.07);
+    --fennic-send-disabled: rgb(247 245 243 / 0.2);
+    --fennic-send-enabled: #e28353;
+    --fennic-icon-inverse: #1c1613;
+    --fennic-accent: #e28353;
+    --fennic-accent-soft: rgb(226 131 83 / 0.18);
+    --fennic-scrim: rgb(10 7 6 / 0.6);
+    --fennic-glass: rgb(44 35 32 / 0.72);
+    --fennic-glass-strong: rgb(44 35 32 / 0.92);
+    --fennic-bevel: rgb(247 245 243 / 0.12);
+
+    --fennic-shadow-composer: 0 5px 16px -4px rgb(10 7 6 / 0.5);
+    --fennic-shadow-composer-focus: 0 4px 12px 0 rgb(10 7 6 / 0.3),
+      0 5px 16px -4px rgb(10 7 6 / 0.55);
+    --fennic-shadow-menu: inset 0 0 0 0.5px rgb(247 245 243 / 0.1),
+      0 4px 16px 0 rgb(10 7 6 / 0.55);
+    --fennic-shadow-floating: 0 4px 15px 2px rgb(10 7 6 / 0.55);
+    --fennic-shadow-raise: 0 2px 8px 0 rgb(10 7 6 / 0.4);
+
+    --background: #1c1613;
+    --foreground: #f7f5f3;
+    --card: #2c2320;
+    --card-foreground: #f7f5f3;
+    --popover: #2c2320;
+    --popover-foreground: #f7f5f3;
+    --primary: #e28353;
+    --primary-foreground: #1c1613;
+    --secondary: #3a2f29;
+    --secondary-foreground: #f7f5f3;
+    --muted: #3a2f29;
+    --muted-foreground: #b0a296;
+    --accent: #3a2f29;
+    --accent-foreground: #f7f5f3;
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: rgb(247 245 243 / 0.1);
+    --input: rgb(247 245 243 / 0.15);
+    --ring: #e28353;
+    --chart-1: #e28353;
+    --chart-2: #d8663a;
+    --chart-3: #f2d6b8;
+    --chart-4: #b0a296;
+    --chart-5: #f7f5f3;
+    --sidebar: #1c1613;
+    --sidebar-foreground: #f7f5f3;
+    --sidebar-primary: #e28353;
+    --sidebar-primary-foreground: #1c1613;
+    --sidebar-accent: rgb(226 131 83 / 0.14);
+    --sidebar-accent-foreground: #f7f5f3;
+    --sidebar-border: rgb(247 245 243 / 0.08);
+    --sidebar-ring: #e28353;
+  }
 }
 
 @layer base {

@@ -18,8 +18,17 @@ import { KimiIcon } from "./icons";
 // matches the doodle's measured 154×44 — see scripts/brand-fennic-assets.mjs.
 // The bitmap master, not the traced SVG: the tracer punched grain into the
 // letterforms that was visible at render size.
+//
+// Two files, one per mode. This is the only brand asset with no ground of its
+// own, so a single ink tone cannot serve both: charcoal #2C2320 vanishes on the
+// dark panel and warm off-white #F7F5F3 vanishes on the light one. The pair is
+// pixel-aligned (same crop, same geometry, same orange dot), so the swap shows
+// only as a change of ink. `prefers-color-scheme` is the right hook because the
+// palette in globals.css keys off it too — there is no theme toggle.
 const WORDMARK_SRC =
   "/sites/kimi-com-185e587f/root-8a5edab2/brand/fennic-text.png";
+const WORDMARK_DARK_SRC =
+  "/sites/kimi-com-185e587f/root-8a5edab2/brand/fennic-text-dark.png";
 
 export default function KimiHomePage() {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -85,7 +94,7 @@ export default function KimiHomePage() {
           className="flex h-[calc(100vh_-_130px)] flex-col md:h-[calc(100vh_-_146px)]"
         >
           {/* .layout-sticky-group — sticks for (space − group)px, then scrolls away */}
-          <div className="sticky top-0 z-[11] flex flex-col bg-kimi-panel">
+          <div className="sticky top-0 z-[11] flex flex-col bg-fennic-panel">
             <div className="grid h-[52px] grid-cols-[1fr_auto_1fr] items-center">
               <div
                 className={`flex items-center pl-[10px] ${collapsed ? "" : "md:hidden"}`}
@@ -94,7 +103,7 @@ export default function KimiHomePage() {
                   type="button"
                   aria-label="Open sidebar"
                   onClick={handleHeaderToggle}
-                  className="flex h-8 w-8 items-center justify-center rounded-[8px] text-kimi-primary transition-colors duration-150 hover:bg-kimi-hover"
+                  className="flex h-8 w-8 items-center justify-center rounded-[8px] text-fennic-primary transition-colors duration-150 hover:bg-fennic-hover"
                 >
                   <KimiIcon name="hide-sidebar" size={20} />
                 </button>
@@ -104,14 +113,25 @@ export default function KimiHomePage() {
             <div className="flex flex-col">
               <div className="flex h-[calc((100vh_-_271px)_/_2)] flex-col items-center justify-end md:h-[calc((100vh_-_294px)_/_2)]">
                 <div className="mb-8 flex w-full justify-center">
-                  <Image
-                    src={WORDMARK_SRC}
-                    alt="Fennic"
-                    width={166}
-                    height={44}
-                    priority
-                    className="h-[37px] w-[139px] md:h-[44px] md:w-[166px]"
-                  />
+                  {/* <picture> rather than two <Image>s: Tailwind's `dark:`
+                      variant is class-based (&:is(.dark *)) and nothing sets
+                      that class, so only a media query resolves here. The
+                      <source> serves the raw PNG — 26 KB, and the <img> below
+                      it keeps next/image's optimisation for the light path. */}
+                  <picture>
+                    <source
+                      media="(prefers-color-scheme: dark)"
+                      srcSet={WORDMARK_DARK_SRC}
+                    />
+                    <Image
+                      src={WORDMARK_SRC}
+                      alt="Fennic"
+                      width={166}
+                      height={44}
+                      priority
+                      className="h-[37px] w-[139px] md:h-[44px] md:w-[166px]"
+                    />
+                  </picture>
                 </div>
               </div>
               <div className="flex shrink flex-col items-center justify-center">
@@ -140,7 +160,7 @@ export default function KimiHomePage() {
                     className="pointer-events-none absolute inset-x-0 top-0 h-[223px] transition-opacity duration-300"
                     style={{
                       backgroundImage:
-                        "linear-gradient(rgba(0, 0, 0, 0.03) 13px, rgba(0, 0, 0, 0) 223px)",
+                        "linear-gradient(var(--fennic-placeholder-bg) 13px, transparent 223px)",
                       opacity: exploreMounted ? 0 : 1,
                     }}
                   />
@@ -160,7 +180,7 @@ export default function KimiHomePage() {
               </div>
               {/* .legal-footer--default — AI note */}
               <div className="mb-2 flex justify-center opacity-70">
-                <span className="px-2.5 text-[12px] leading-5 text-kimi-faint">
+                <span className="px-2.5 text-[12px] leading-5 text-fennic-faint">
                   AI-generated, for reference only
                 </span>
               </div>

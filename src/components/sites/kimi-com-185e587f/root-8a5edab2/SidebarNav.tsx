@@ -8,35 +8,25 @@ import type { KimiNavItem } from "@/types/kimi-com-185e587f";
 import { KimiIcon, type KimiIconName } from "./icons";
 
 const TOP_ITEMS = [
-  { label: "My Kimi", href: "/mykimi", icon: "my-kimi" },
+  { label: "My Fennic", href: "/my-fennic", icon: "my-kimi" },
   { label: "Plugins", href: "/plugins", icon: "plugins" },
-  { label: "Scheduled Tasks", href: "/tasks", icon: "scheduled-tasks" },
-  { label: "Slides", href: "/slides", icon: "slides" },
-  { label: "Swarm", href: "/agent-swarm", icon: "swarm" },
   { label: "Deep Research", href: "/deep-research", icon: "deep-research" },
 ] as const satisfies readonly KimiNavItem[];
 
 const MORE_ITEMS = [
-  { label: "Docs", href: "/docs", icon: "docs" },
   { label: "Websites", href: "/websites", icon: "websites" },
   { label: "Sheets", href: "/sheets", icon: "sheets" },
   { label: "Design", href: "/design", icon: "design" },
-  {
-    label: "Kimi Work",
-    href: "https://www.kimi.com/en/products/kimi-work",
-    icon: "kimi-work",
-  },
-  { label: "Kimi Code", href: "/code?from=kimi_homepage_sidebar", icon: "kimi-code" },
 ] as const satisfies readonly KimiNavItem[];
 
 const ROW_TRANSITION =
-  "transition-[background-color,color,box-shadow] duration-150 hover:bg-kimi-hover";
+  "transition-[background-color,color,box-shadow] duration-150 hover:bg-fennic-hover";
 
 function NavItem({ item }: { item: KimiNavItem & { icon: KimiIconName } }) {
   return (
     <a
       href={item.href}
-      className={`block w-full rounded-[12px] text-kimi-primary ${ROW_TRANSITION}`}
+      className={`block w-full rounded-[12px] text-fennic-primary ${ROW_TRANSITION}`}
     >
       <span className="flex h-10 items-center gap-1.5 px-2">
         <KimiIcon name={item.icon} size={18} />
@@ -60,11 +50,14 @@ export default function SidebarNav() {
         {TOP_ITEMS.map((item) => (
           <NavItem key={item.href} item={item} />
         ))}
+        {/* text-left: <button> keeps the UA's center alignment (Tailwind
+            preflight does not reset it), which would offset the label
+            against the <a> rows. */}
         <button
           type="button"
           aria-expanded={moreOpen}
           onClick={() => setMoreOpen((open) => !open)}
-          className={`flex h-10 w-full items-center gap-1.5 rounded-[12px] px-2 text-kimi-primary ${ROW_TRANSITION}`}
+          className={`flex h-10 w-full items-center gap-1.5 rounded-[12px] px-2 text-left text-fennic-primary ${ROW_TRANSITION}`}
         >
           <KimiIcon name="collapse" size={20} />
           <span className="flex-1 overflow-hidden text-sm leading-5 font-normal whitespace-nowrap text-ellipsis">
@@ -73,7 +66,7 @@ export default function SidebarNav() {
           <KimiIcon
             name="collapse-chevron"
             size={18}
-            className={`text-kimi-tertiary transition-transform duration-150 ease-kimi-card ${
+            className={`text-fennic-tertiary transition-transform duration-150 ease-fennic-card ${
               moreOpen ? "rotate-180" : ""
             }`}
           />
@@ -87,25 +80,6 @@ export default function SidebarNav() {
             {MORE_ITEMS.map((item) => (
               <NavItem key={item.href} item={item} />
             ))}
-            {/* Kimi Claw row — trigger + adjacent menu trigger */}
-            <div className="flex w-full gap-1.5">
-              <button
-                type="button"
-                className={`flex h-10 flex-1 items-center gap-1.5 rounded-[12px] px-2 text-kimi-primary ${ROW_TRANSITION}`}
-              >
-                <KimiIcon name="kimi-claw" size={18} />
-                <span className="flex-1 overflow-hidden text-sm leading-5 font-normal whitespace-nowrap text-ellipsis">
-                  Kimi Claw
-                </span>
-              </button>
-              <button
-                type="button"
-                aria-label="Kimi Claw options"
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-kimi-primary ${ROW_TRANSITION}`}
-              >
-                <KimiIcon name="claw-more" size={15} />
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -116,13 +90,13 @@ export default function SidebarNav() {
           <button
             type="button"
             onClick={() => setProjectsOpen((open) => !open)}
-            className="flex h-7 items-center gap-1 rounded-[8px] px-1.5 text-sm text-kimi-tertiary"
+            className="flex h-7 items-center gap-1 rounded-[8px] px-1.5 text-left text-sm text-fennic-tertiary"
           >
             Projects
             <KimiIcon
               name="projects-chevron"
               size={14}
-              className={`transition-opacity duration-150 ease-kimi-card ${
+              className={`transition-opacity duration-150 ease-fennic-card ${
                 projectsOpen ? "opacity-100" : "opacity-0"
               }`}
             />
@@ -130,7 +104,7 @@ export default function SidebarNav() {
           <button
             type="button"
             aria-label="New project"
-            className={`flex h-7 w-7 items-center justify-center rounded-[8px] text-kimi-tertiary ${ROW_TRANSITION}`}
+            className={`flex h-7 w-7 items-center justify-center rounded-[8px] text-fennic-tertiary ${ROW_TRANSITION}`}
           >
             <KimiIcon name="new-project" size={14} />
           </button>
@@ -138,7 +112,7 @@ export default function SidebarNav() {
         {projectsOpen ? (
           <button
             type="button"
-            className={`flex h-10 w-full items-center gap-1.5 rounded-[12px] px-2 text-kimi-primary ${ROW_TRANSITION}`}
+            className={`flex h-10 w-full items-center gap-1.5 rounded-[12px] px-2 text-left text-fennic-primary ${ROW_TRANSITION}`}
           >
             <KimiIcon name="new-project" size={18} />
             <span className="text-sm leading-5 font-normal">New project</span>
@@ -149,14 +123,14 @@ export default function SidebarNav() {
       {/* Section 3 — Chats */}
       <div className="flex flex-col">
         <div className="flex h-10 items-center justify-between gap-2 rounded-[8px] px-2">
-          <div className="flex h-7 items-center px-1.5 text-sm text-kimi-tertiary">
+          <div className="flex h-7 items-center px-1.5 text-sm text-fennic-tertiary">
             Chats
           </div>
         </div>
         <div className="pb-1">
           <button
             type="button"
-            className={`inline-block w-full rounded-[12px] px-2 py-2.5 text-sm leading-5 font-normal text-kimi-secondary ${ROW_TRANSITION} hover:text-kimi-primary`}
+            className={`inline-block w-full rounded-[12px] px-2 py-2.5 text-left text-sm leading-5 font-normal text-fennic-secondary ${ROW_TRANSITION} hover:text-fennic-primary`}
           >
             Log in to sync chat history
           </button>

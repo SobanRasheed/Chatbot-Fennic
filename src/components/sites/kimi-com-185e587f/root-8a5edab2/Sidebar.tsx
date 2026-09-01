@@ -17,7 +17,7 @@ export interface SidebarProps {
 
 export default function Sidebar({ onCollapse }: SidebarProps) {
   return (
-    <aside className="flex h-full w-[240px] shrink-0 flex-col bg-kimi-ground">
+    <aside className="flex h-full w-[240px] shrink-0 flex-col bg-fennic-ground">
       {/* .sidebar-header — 240×56 */}
       <div className="flex h-14 items-center justify-between pt-[15px] pr-[10px] pb-[9px] pl-4">
         <Link
@@ -38,7 +38,7 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
           type="button"
           aria-label="Hide sidebar"
           onClick={onCollapse}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] text-kimi-primary transition-colors duration-150 hover:bg-kimi-hover"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] text-fennic-primary transition-colors duration-150 hover:bg-fennic-hover"
         >
           <KimiIcon name="hide-sidebar" size={20} />
         </button>
@@ -48,7 +48,7 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
       <div className="px-2 pt-1.5">
         <Link
           href="/"
-          className="flex h-[46px] items-center rounded-[12px] bg-kimi-panel text-kimi-primary transition-[box-shadow,background-color] duration-150 hover:bg-kimi-hover hover:shadow-[0_2px_8px_0_rgba(0,0,0,0.05)]"
+          className="flex h-[46px] items-center rounded-[12px] bg-fennic-panel text-fennic-primary transition-[box-shadow,background-color] duration-150 hover:bg-fennic-hover hover:shadow-fennic-raise"
         >
           <span className="flex h-11 w-full items-center justify-between px-2">
             <span className="flex items-center gap-1.5">
@@ -56,10 +56,10 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
               <span className="text-sm leading-5 font-medium">New Chat</span>
             </span>
             <span className="flex items-center gap-0.5">
-              <kbd className="inline-flex h-5 items-center justify-center rounded-[4px] bg-kimi-placeholder-bg px-1 text-sm leading-5 font-normal text-kimi-tertiary">
+              <kbd className="inline-flex h-5 items-center justify-center rounded-[4px] bg-fennic-placeholder-bg px-1 text-sm leading-5 font-normal text-fennic-tertiary">
                 Ctrl
               </kbd>
-              <kbd className="inline-flex h-5 items-center justify-center rounded-[4px] bg-kimi-placeholder-bg px-1 text-sm leading-5 font-normal text-kimi-tertiary">
+              <kbd className="inline-flex h-5 items-center justify-center rounded-[4px] bg-fennic-placeholder-bg px-1 text-sm leading-5 font-normal text-fennic-tertiary">
                 K
               </kbd>
             </span>
@@ -73,11 +73,11 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
       </div>
 
       {/* .next-sidebar__footer — 240×60 */}
-      <div className="h-[60px] bg-kimi-ground p-2">
+      <div className="h-[60px] bg-fennic-ground p-2">
         <div className="flex h-11 items-center">
           <button
             type="button"
-            className="flex h-11 flex-1 items-center rounded-[12px] p-2 text-kimi-primary transition-colors duration-150 hover:bg-kimi-hover"
+            className="flex h-11 flex-1 items-center rounded-[12px] p-2 text-fennic-primary transition-colors duration-150 hover:bg-fennic-hover"
           >
             <span className="flex items-center gap-2">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full">
@@ -89,7 +89,7 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
           <button
             type="button"
             aria-label="Get App"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] p-[13px] text-kimi-tertiary transition-colors duration-150 hover:bg-kimi-hover"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] p-[13px] text-fennic-tertiary transition-colors duration-150 hover:bg-fennic-hover"
           >
             <KimiIcon name="get-app" size={18} />
           </button>

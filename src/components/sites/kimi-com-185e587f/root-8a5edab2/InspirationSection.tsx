@@ -16,7 +16,7 @@ function InspirationCard({ card }: { card: KimiInspirationCard }) {
       {...(card.external ? { target: "_blank", rel: "noreferrer" } : {})}
       className="group flex flex-col gap-1.5 md:gap-2"
     >
-      <span className="relative block aspect-[233/136] overflow-hidden rounded-[16px] border border-kimi-line bg-kimi-placeholder-bg transition-opacity duration-[180ms] ease-kimi-card group-hover:opacity-90">
+      <span className="relative block aspect-[233/136] overflow-hidden rounded-[16px] border border-fennic-line bg-fennic-placeholder-bg transition-opacity duration-[180ms] ease-fennic-card group-hover:opacity-90">
         <Image
           src={card.image}
           alt={card.title}
@@ -25,7 +25,7 @@ function InspirationCard({ card }: { card: KimiInspirationCard }) {
           className="object-cover"
         />
       </span>
-      <p className="overflow-hidden px-1 text-sm leading-5 text-ellipsis whitespace-nowrap text-kimi-secondary transition-colors duration-200 group-hover:text-kimi-primary md:px-2">
+      <p className="overflow-hidden px-1 text-sm leading-5 text-ellipsis whitespace-nowrap text-fennic-secondary transition-colors duration-200 group-hover:text-fennic-primary md:px-2">
         {card.title}
       </p>
     </a>
@@ -40,7 +40,7 @@ export function InspirationSection({
   return (
     <section className="flex flex-col gap-3">
       {section.heading ? (
-        <h2 className="flex h-6 items-center gap-1.5 px-4 text-sm leading-5 font-normal text-kimi-secondary">
+        <h2 className="flex h-6 items-center gap-1.5 px-4 text-sm leading-5 font-normal text-fennic-secondary">
           {section.icon ? (
             <Image
               src={section.icon}

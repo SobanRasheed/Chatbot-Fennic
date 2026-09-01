@@ -18,7 +18,7 @@ const MODELS = [
   { name: "Instant", description: "Fast chat, quick replies" },
   { name: "K3", description: "Chat & Agent, flagship all-rounder" },
   {
-    name: "K3 Swarm",
+    name: "K3 Parallel",
     description: "Massive search, batch processing, and more in one go",
   },
 ];
@@ -28,7 +28,7 @@ function CheckIcon() {
     <svg
       viewBox="0 0 16 16"
       aria-hidden
-      className="h-4 w-4 shrink-0 text-kimi-primary"
+      className="h-4 w-4 shrink-0 text-fennic-primary"
     >
       <path
         d="M3 8.5l3.2 3.2L13 5"
@@ -75,14 +75,14 @@ export default function ModelMenu({
   return (
     <div
       ref={ref}
-      className="animate-in absolute right-0 top-[calc(100%_+_8px)] z-20 flex w-[274px] flex-col gap-0.5 rounded-[16px] bg-kimi-panel p-2 shadow-kimi-menu fade-in-0 duration-100"
+      className="animate-in absolute right-0 top-[calc(100%_+_8px)] z-20 flex w-[274px] flex-col gap-0.5 rounded-[16px] bg-fennic-panel p-2 shadow-fennic-menu fade-in-0 duration-100"
     >
       {MODELS.map((model) => (
         <button
           key={model.name}
           type="button"
           onClick={() => onSelect(model.name)}
-          className="flex w-full items-center gap-2 rounded-[10px] p-2 text-left transition-colors duration-150 hover:bg-kimi-hover"
+          className="flex w-full items-center gap-2 rounded-[10px] p-2 text-left transition-colors duration-150 hover:bg-fennic-hover"
         >
           {selected === model.name ? (
             <CheckIcon />
@@ -90,20 +90,20 @@ export default function ModelMenu({
             <span className="h-4 w-4 shrink-0" aria-hidden />
           )}
           <span className="flex flex-col">
-            <span className="text-sm text-kimi-primary">{model.name}</span>
-            <span className="text-[13px] leading-[18px] text-kimi-tertiary">
+            <span className="text-sm text-fennic-primary">{model.name}</span>
+            <span className="text-[13px] leading-[18px] text-fennic-tertiary">
               {model.description}
             </span>
           </span>
         </button>
       ))}
-      <div className="mx-2 my-1 h-px bg-kimi-border" />
+      <div className="mx-2 my-1 h-px bg-fennic-border" />
       {/* Height pinned to live: the popover measures 274×260.5, and the other
           children account for 213px, so this row is 47.5 — the spec's "~36"
           note underestimated it. */}
       <div className="flex h-[47.5px] items-center justify-between rounded-[10px] px-2">
-        <span className="text-sm text-kimi-secondary">Thinking effort</span>
-        <span className="text-sm text-kimi-primary">{effort}</span>
+        <span className="text-sm text-fennic-secondary">Thinking effort</span>
+        <span className="text-sm text-fennic-primary">{effort}</span>
       </div>
     </div>
   );

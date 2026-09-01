@@ -34,6 +34,16 @@ const REFS = "docs/design-references/kimi-com-185e587f/root-8a5edab2";
 // Ship the wordmark at 4× its CSS size so it stays crisp on hi-DPI screens.
 const WORDMARK_SCALE = 4;
 
+// The hero wordmark is the one brand asset with real light/dark exposure: it sits
+// on --fennic-panel with no ground of its own, so a single ink tone cannot serve
+// both. The doodle supplies the *geometry* (its measured ink box is what the
+// wordmark is scaled against); the ink itself is Fennic's, not Kimi's — the
+// doodle measures #000000 and neutral black is exactly what the palette avoids.
+// These two are `--fennic-text-primary` in each mode. KimiHomePage swaps between
+// the resulting files with a <picture> source.
+const LIGHT_INK = [0x2c, 0x23, 0x20]; // charcoal #2C2320
+const DARK_INK = [0xf7, 0xf5, 0xf3]; // warm off-white #F7F5F3
+
 // ---------------------------------------------------------------- CRC32 ----
 const CRC_TABLE = new Int32Array(256);
 for (let n = 0; n < 256; n += 1) {
@@ -391,7 +401,7 @@ console.log(`  → "KIMI" renders ${KIMI.w.toFixed(1)}x${KIMI.h.toFixed(1)} CSS 
 //    ink box, and scale so the ink height equals "KIMI"'s.
 const art = decodePng(readFileSync(resolve(SRC, "Fennic Text.png")));
 const artInk = inkBounds(art);
-const word = reink(crop(art, artInk), INK);
+const word = reink(crop(art, artInk), LIGHT_INK);
 const aspect = word.width / word.height;
 const desktop = { h: Math.round(KIMI.h), w: Math.round(KIMI.h * aspect) };
 const mobile = {
@@ -401,8 +411,17 @@ const mobile = {
 const wordmark = resize(word, desktop.w * WORDMARK_SCALE, desktop.h * WORDMARK_SCALE);
 write(`${BRAND}/fennic-text.png`, encodePng(wordmark));
 console.log(`Fennic Text.png  ${art.width}x${art.height}  ink ${artInk.width}x${artInk.height} @${artInk.x},${artInk.y}  aspect ${aspect.toFixed(4)}`);
-console.log(`  ${word.letters.toLocaleString()} letterform px re-inked ${INK_HEX}, ${word.dot.toLocaleString()} dot px left orange`);
+console.log(`  ${word.letters.toLocaleString()} letterform px re-inked #2c2320, ${word.dot.toLocaleString()} dot px left orange`);
 console.log(`  → wordmark renders ${desktop.w}x${desktop.h} CSS px, shipped ${WORDMARK_SCALE}× at ${wordmark.width}x${wordmark.height}`);
+
+// 2b. The dark twin. Same crop, same geometry, same orange dot — only the
+//     letterform RGB differs, so the two files are pixel-aligned and the swap is
+//     invisible apart from the ink. Re-inked from `art` rather than from `word`
+//     so it never depends on the light pass having run first.
+const wordDark = reink(crop(art, artInk), DARK_INK);
+const wordmarkDark = resize(wordDark, desktop.w * WORDMARK_SCALE, desktop.h * WORDMARK_SCALE);
+write(`${BRAND}/fennic-text-dark.png`, encodePng(wordmarkDark));
+console.log(`  dark twin: ${wordDark.letters.toLocaleString()} letterform px re-inked #f7f5f3, ${wordDark.dot.toLocaleString()} dot px left orange`);
 
 // 3. Sidebar mark: Kimi's own logo is a dark rounded tile, so the fox keeps its
 //    black ground — crop a square around it that leaves the fox covering about
