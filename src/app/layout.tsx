@@ -21,11 +21,18 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // No `light` class here: the palette follows prefers-color-scheme, and both
-  // modes are defined in globals.css. Add `light` or `dark` to pin one.
+  // The palette follows prefers-color-scheme by default. A user who has pinned
+  // a theme in Settings gets it back before first paint: this script mirrors
+  // the store in preferences.ts (same key, same class names) so there is no
+  // flash of the OS-preferred palette. Inline at the top of <body> — it runs
+  // synchronously during the initial HTML parse, before hydration and before
+  // the app renders. `suppressHydrationWarning` covers the class it adds to
+  // <html>, which React never knows about.
+  const themeBootstrap = `(function(){try{var p=JSON.parse(localStorage.getItem("fennic-preferences")||"{}");var t=p.theme;var c=document.documentElement.classList;t==="dark"?c.add("dark"):t==="light"?c.add("light"):(c.remove("dark"),c.remove("light"))}catch(e){}})()`;
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <body className="min-h-full flex flex-col bg-fennic-ground">
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
         {children}
       </body>
     </html>

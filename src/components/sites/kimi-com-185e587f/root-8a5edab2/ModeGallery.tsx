@@ -41,7 +41,11 @@ function GalleryCard({ card }: { card: ModeCard }) {
 
 export default function ModeGallery({ mode }: { mode: PublisherMode }) {
   const [category, setCategory] = useState<WebsiteCategory>("All");
-  const tabbed = mode.gallery.kind === "tabs";
+  // Bind the union to a const so TypeScript narrows it in the branches below.
+  // Hoisting `kind === "tabs"` into a boolean first does not narrow `mode.gallery`,
+  // which is why `gallery.caption` has to be reached through this.
+  const gallery = mode.gallery;
+  const tabbed = gallery.kind === "tabs";
 
   const cards = useMemo(
     () =>
@@ -53,7 +57,7 @@ export default function ModeGallery({ mode }: { mode: PublisherMode }) {
 
   return (
     <div className="flex w-full flex-col gap-4">
-      {tabbed ? (
+      {gallery.kind === "tabs" ? (
         <div
           role="tablist"
           aria-label="Website categories"
@@ -81,7 +85,7 @@ export default function ModeGallery({ mode }: { mode: PublisherMode }) {
         </div>
       ) : (
         <h2 className="px-4 text-sm leading-5 font-normal text-fennic-secondary">
-          {mode.gallery.caption}
+          {gallery.caption}
         </h2>
       )}
 

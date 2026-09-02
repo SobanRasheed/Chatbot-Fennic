@@ -34,6 +34,7 @@ off-white `#F7F5F3`. Shadows are always warm charcoal, never neutral black.
 | Registry icons | `public/sites/kimi-com-185e587f/root-8a5edab2/icons/*.svg` | inline SVG | vector | 18/20/28px | ✅ tokenised |
 | Plugin logos | `public/sites/kimi-com-185e587f/root-8a5edab2/plugins/<slug>.svg` | SVG or PNG | 128×128 | 40×40 | ❌ monogram fallback |
 | Self-growth clip | `public/sites/kimi-com-185e587f/root-8a5edab2/video/self-growth.webm` | WebM + MP4 | 1080×624 | ~540×308 | ⚠️ animated in code instead |
+| App-store QR | `public/sites/kimi-com-185e587f/root-8a5edab2/brand/app-qr.svg` | SVG | ≥296×296 | 148×148 | ❌ decorative stand-in |
 
 Masters live in `src/UI Components/` and are **not served** — they are the
 sources the build script reads: `fennic ai icon.png` (1448×1086, note it is 4:3
@@ -375,6 +376,34 @@ path, so neither branch can render an empty box.
 
 ---
 
+## 11. App-store QR code — decorative stand-in
+
+`ProfileMenu.tsx` (the sidebar account flyout) renders a QR panel when you hover
+"Get App → Mobile App". It is **not a real QR code**: `QrArt` is a deterministic
+seeded xorshift drawing (seed `0x66456e6e`, ~44% module density, three finder
+squares, `fill="var(--fennic-panel)"` so the knockout follows the colour scheme).
+It reads as a QR at a glance and costs nothing, but pointing a phone camera at it
+produces nothing — there is no encoded payload, and no app to download.
+
+**To ship the real thing:** replace `QrArt` with an `<Image>` in the hover panel —
+
+- **Path** `public/sites/kimi-com-185e587f/root-8a5edab2/brand/app-qr.svg`
+- **Format** SVG preferred (crisp at any size); PNG at 3× is fine
+- **Intrinsic** ≥ 296×296 (quiet zone included — a QR without its margin
+  scannably fails), rendered at 148×148
+- **Payload** a real redirect URL (e.g. `https://fennic.ai/get-app` → App Store /
+  Play Store by user agent), never a raw store link that can rot
+- **Colour** Dark ink on light ground only. QR scanners want contrast; do not
+  invert it for dark mode. Give it a fixed light tile (`bg-white rounded-lg
+  p-3`) in both schemes so the code itself never rides `--fennic-ground`
+
+The "Windows" row in the same submenu is `href="#windows-download"` — a
+placeholder with no target. When there is a real build to point at, swap in the
+download URL; until then the row is inert by design rather than a dead external
+link.
+
+---
+
 ## Do this next
 
 Ordered by what is most visibly wrong today.
@@ -392,6 +421,8 @@ Ordered by what is most visibly wrong today.
    so this is a polish item, and only for vendors whose marks you may use.
 6. **Self-growth clip** — §10. Also optional, and arguably a downgrade: a video
    bakes its background and this panel's ground flips with the colour scheme.
+7. **App-store QR** — §11. Only when there is an app to point at; until then the
+   decorative `QrArt` stand-in is the honest choice.
 
 Done: the dark-mode wordmark. It shipped as `fennic-text-dark.png` plus the
 `<picture>` swap described in section 2, and `scripts/drive-kimi-clone.mjs`

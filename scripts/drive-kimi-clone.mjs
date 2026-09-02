@@ -4,9 +4,9 @@
 //   1. npm run dev                      (leave running)
 //   2. node scripts/drive-kimi-clone.mjs
 //
-// Four passes: the desktop homepage, the nav purge + the five subpages, the
-// My Fennic workspace panel (three tabs, all backend-fed), the light/dark
-// palette, and the mobile drawer.
+// Passes: the desktop homepage, the nav purge + subpages, the profile menu and
+// Settings, the My Fennic workspace panel (three tabs, all backend-fed), the
+// light/dark palette, and the mobile drawer.
 //
 // Env: CLONE_URL (default http://localhost:3000) · HEADED=1 to watch it run
 //      SLOWMO=<ms> pacing for headed runs (default 250) · KEEP_OPEN=<seconds>
@@ -296,12 +296,46 @@ async function mobilePass(browser) {
 const BANNED =
   /kimi claw|kimi code|kimi work|\bdocs\b|\bswarm\b|\bslides\b|scheduled tasks/i;
 
-const ROUTES = [
+// Routes that render a document: a heading, sections, prose.
+const CONTENT_ROUTES = [
   { path: "/my-fennic", title: "My Fennic" },
   { path: "/plugins", title: "Plugins" },
-  { path: "/deep-research", title: "Deep Research" },
-  { path: "/websites", title: "Websites" },
-  { path: "/design", title: "Design" },
+  { path: "/help", title: "Help Center" },
+  { path: "/features", title: "Features" },
+  { path: "/about", title: "About Us" },
+  { path: "/terms", title: "Terms of Service" },
+  { path: "/privacy", title: "Privacy Policy" },
+];
+
+// Publisher modes. These are NOT content pages — they are the new-chat screen in
+// a mode, so they have no h1 and no <main>: the wordmark is an image and the
+// composer is the point. Asserting a heading here (as the old shared loop did)
+// would fail on a page that is working exactly as intended.
+const MODE_ROUTES = [
+  {
+    path: "/deep-research",
+    label: "Deep Research",
+    placeholder: "Ask Fennic to get an in-depth research report",
+    caption: "Featured Deep Research cases",
+  },
+  {
+    path: "/websites",
+    label: "Websites",
+    placeholder: "Beautiful design, real backend. Just describe your site",
+    tabs: ["All", "Game", "Visualization", "Dashboard", "Tool", "Landing Page"],
+  },
+  {
+    path: "/sheets",
+    label: "Sheets",
+    placeholder: "Describe the spreadsheet or dashboard you need",
+    caption: "Featured Sheets cases",
+  },
+  {
+    path: "/design",
+    label: "Design",
+    placeholder: "Describe an image, mockup or brand asset",
+    caption: "Featured Design cases",
+  },
 ];
 
 // Read a palette token straight off :root — cheaper and less brittle than
@@ -311,6 +345,30 @@ const token = (page, name) =>
     (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(),
     name,
   );
+
+// The wordmark's file, polled instead of sampled: currentSrc is empty until the
+// browser finishes loading the img, and the preferences store swaps the
+// <picture> for a bare next/image a beat after hydration — a single read can
+// land in either gap. Falls back to the src attribute, which names the file
+// even while loading, and keeps polling until it matches `expectFile` (so a
+// pre-swap light read in a dark context doesn't pass for an answer). Returns
+// the last src seen, for the error message, when the timeout runs out.
+const wordmarkSrc = async (page, expectFile, { timeout = 15_000 } = {}) => {
+  const deadline = Date.now() + timeout;
+  let saw = null;
+  for (;;) {
+    const src = await page.locator('img[alt="Fennic"]').evaluateAll((els) =>
+      els.map((el) => el.currentSrc || el.src).find((s) => s.includes("fennic-text")),
+    );
+    if (src) {
+      saw = src;
+      if (src.includes(expectFile)) return src;
+    }
+    if (Date.now() > deadline) return saw;
+    await page.waitForTimeout(250);
+  }
+};
+
 
 async function navPass(browser) {
   console.log("\nnav purge + routes — 1440x900");
@@ -336,7 +394,7 @@ async function navPass(browser) {
     return `${links.length} links: ${links.map((l) => l.replace(/\s+/g, " ").trim()).join(" / ")}`;
   });
 
-  for (const route of ROUTES) {
+  for (const route of CONTENT_ROUTES) {
     await step(`${route.path} renders`, async () => {
       const response = await page.goto(`${BASE_URL}${route.path}`, {
         waitUntil: "domcontentloaded",
@@ -356,6 +414,248 @@ async function navPass(browser) {
       )}`;
     });
   }
+
+  for (const route of MODE_ROUTES) {
+    await step(`${route.path} opens the composer in ${route.label} mode`, async () => {
+      const response = await page.goto(`${BASE_URL}${route.path}`, {
+        waitUntil: "domcontentloaded",
+      });
+      if (response && response.status() >= 400)
+        throw new Error(`HTTP ${response.status()}`);
+      await hideDevOverlay(page);
+      const composer = page.getByRole("textbox", { name: "Chat message" });
+      await composer.waitFor({ timeout: 90_000 });
+      await hydrated(page);
+
+      // The mode's own prompt, verbatim — a shared placeholder would mean the
+      // mode never actually reached the composer.
+      const placeholder = await composer.getAttribute("placeholder");
+      if (placeholder !== route.placeholder)
+        throw new Error(`placeholder is "${placeholder}"`);
+
+      // The mode named inside the composer box, not merely linked in the page.
+      const box = page.locator('div:has(> textarea[aria-label="Chat message"])');
+      const chip = (await box.innerText()).replace(/\s+/g, " ");
+      if (!chip.includes(route.label))
+        throw new Error(`composer toolbar does not name ${route.label}: "${chip}"`);
+
+      // The wordmark is still the hero, and still the right ink for the scheme.
+      await page.getByRole("img", { name: "Fennic" }).first().waitFor();
+
+      const cards = page.locator("a[target=_blank], a[href^='/replay']");
+      const count = await cards.count();
+      if (count === 0) throw new Error("the gallery is empty");
+
+      const galleryTabs = page.getByRole("tablist", { name: "Website categories" });
+      let detail = `${count} cards`;
+      if (route.tabs) {
+        const labels = (await galleryTabs.getByRole("tab").allInnerTexts()).map((t) =>
+          t.trim(),
+        );
+        if (labels.join("|") !== route.tabs.join("|"))
+          throw new Error(`tabs are ${labels.join(" / ")}`);
+        // Filtering must actually shrink the grid, or the tabs are decoration.
+        await galleryTabs.getByRole("tab", { name: "Game", exact: true }).click();
+        if (!(await until(async () => (await cards.count()) < count)))
+          throw new Error(`the Game tab left all ${count} cards in place`);
+        detail = `${count} cards, tabs ${labels.join(" / ")}, Game → ${await cards.count()}`;
+        await galleryTabs.getByRole("tab", { name: "All", exact: true }).click();
+      } else {
+        const caption = page.getByRole("heading", { level: 2, name: route.caption });
+        if (!(await caption.isVisible()))
+          throw new Error(`the "${route.caption}" caption is missing`);
+        detail = `${count} cards, "${route.caption}"`;
+      }
+
+      // The sidebar has to say where you are.
+      const current = page.locator('aside a[aria-current="page"]');
+      const marked = (await current.count()) === 1 ? (await current.innerText()).trim() : null;
+      if (marked !== route.label)
+        throw new Error(`sidebar marks "${marked}" as current, expected ${route.label}`);
+
+      const body = (await page.locator("aside").innerText()).replace(/\s+/g, " ");
+      const hit = BANNED.exec(body);
+      if (hit) throw new Error(`sidebar mentions removed product "${hit[0]}"`);
+
+      return `${detail}, ${await shot(page, `mode${route.path.replace(/\//g, "-")}`)}`;
+    });
+  }
+
+  await context.close();
+}
+
+// The profile menu (hover off the sidebar footer) and the Settings screen it
+// ends in. Every submenu the reference shows gets opened, the language choice
+// is proven to survive a reload, and the theme pin is proven to re-paint the
+// page — a dead segmented control would pass a visibility check.
+async function accountPass(browser) {
+  console.log("\naccount menu + settings — 1440x900");
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  watchPage(page, "account");
+  await page.goto(BASE_URL, { waitUntil: "domcontentloaded" });
+  await hideDevOverlay(page);
+  await page.getByRole("textbox", { name: "Chat message" }).waitFor({ timeout: 90_000 });
+  await hydrated(page);
+
+  const accountMenu = page.getByRole("menu", { name: "Account" });
+
+  await step("hovering the profile row opens the account menu", async () => {
+    // The menu must be absent before the hover — conditional rendering is what
+    // keeps its links out of the sidebar's nav assertions.
+    if ((await accountMenu.count()) !== 0)
+      throw new Error("the menu is in the DOM before any hover");
+    await page.getByRole("button", { name: "Titumama" }).hover();
+    await accountMenu.waitFor();
+    const labels = (await accountMenu.getByRole("menuitem").allInnerTexts()).map((t) =>
+      t.replace(/\s+/g, " ").trim(),
+    );
+    // Gift Card is out of scope by request; the purged products stay out.
+    if (labels.join("|") !== "Get App|About Us|Language English|Get Help|Settings")
+      throw new Error(`menu shows: ${labels.join(" / ")}`);
+    return `${labels.map((l) => l.split(" ")[0]).join(" / ")}, ${await shot(page, "profile-menu")}`;
+  });
+
+  await step("About Us opens Terms / Privacy / Features and routes", async () => {
+    await accountMenu.getByRole("menuitem", { name: /^About Us/ }).hover();
+    const sub = page.getByRole("menu", { name: "About Us" });
+    await sub.waitFor();
+    const labels = (await sub.getByRole("menuitem").allInnerTexts()).map((t) => t.trim());
+    if (labels.join("|") !== "Terms of Service|Privacy Policy|Features")
+      throw new Error(`About Us shows: ${labels.join(" / ")}`);
+    await shot(page, "menu-about-us");
+    await sub.getByRole("menuitem", { name: "Terms of Service" }).click();
+    await page.waitForURL("**/terms", { timeout: 30_000 });
+    return "Terms of Service route reached";
+  });
+
+  await step("Language selects, shows the choice, and survives a reload", async () => {
+    // The About Us step routed to /terms, which has no composer — and the
+    // reload below asserts on one. Come home first so the reload means
+    // something.
+    await page.goto(BASE_URL, { waitUntil: "domcontentloaded" });
+    await hideDevOverlay(page);
+    await page.getByRole("textbox", { name: "Chat message" }).waitFor({ timeout: 90_000 });
+    await hydrated(page);
+    await page.getByRole("button", { name: "Titumama" }).hover();
+    await accountMenu.waitFor();
+    await accountMenu.getByRole("menuitem", { name: /^Language/ }).hover();
+    const sub = page.getByRole("menu", { name: "Language" });
+    await sub.waitFor();
+    await sub.getByRole("menuitemradio", { name: "简体中文" }).click();
+    if (
+      !(await until(async () =>
+        sub.getByRole("menuitemradio", { name: "简体中文", checked: true }).isVisible(),
+      ))
+    )
+      throw new Error("the check never moved to 简体中文");
+    const row = (
+      await accountMenu.getByRole("menuitem", { name: /^Language/ }).innerText()
+    ).replace(/\s+/g, " ").trim();
+    if (!row.includes("简体中文")) throw new Error(`Language row still reads "${row}"`);
+    // Reload: the choice has to come back from localStorage via the store.
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await hideDevOverlay(page);
+    await page.getByRole("textbox", { name: "Chat message" }).waitFor({ timeout: 90_000 });
+    await hydrated(page);
+    await page.getByRole("button", { name: "Titumama" }).hover();
+    await accountMenu.waitFor();
+    const restored = (
+      await accountMenu.getByRole("menuitem", { name: /^Language/ }).innerText()
+    ).replace(/\s+/g, " ").trim();
+    if (!restored.includes("简体中文"))
+      throw new Error(`after reload the Language row reads "${restored}"`);
+    // Put it back so later passes start from English.
+    await accountMenu.getByRole("menuitem", { name: /^Language/ }).hover();
+    await page.getByRole("menu", { name: "Language" }).waitFor();
+    await page
+      .getByRole("menu", { name: "Language" })
+      .getByRole("menuitemradio", { name: "English" })
+      .click();
+    // Close before the next step — its footer Get App trigger is only unique
+    // while the menu (with its own Get App item) is not in the DOM.
+    await page.keyboard.press("Escape");
+    if (!(await until(async () => (await accountMenu.count()) === 0)))
+      throw new Error("Escape did not close the language menu");
+    return "English → 简体中文 → reload → 简体中文 → English";
+  });
+
+  await step("Get App opens Mobile App + Windows, and Mobile App shows a QR", async () => {
+    // The footer icon button — the menu is closed at this point, so the only
+    // "Get App" button on the page is the footer trigger.
+    await page.getByRole("button", { name: "Get App" }).click();
+    const sub = page.getByRole("menu", { name: "Get App" });
+    await sub.waitFor();
+    const labels = (await sub.getByRole("menuitem").allInnerTexts()).map((t) =>
+      t.replace(/\s+/g, " ").trim(),
+    );
+    if (labels.join("|") !== "Mobile App|Windows Download")
+      throw new Error(`Get App shows: ${labels.join(" / ")}`);
+    await sub.getByRole("menuitem", { name: /^Mobile App/ }).hover();
+    // The QR is decorative by design (image specs.md §11); assert the panel
+    // painted with its caption, not that it scans.
+    await sub.getByText("Scan to download the").waitFor();
+    const modules = await sub.locator("svg[aria-hidden] rect").count();
+    if (modules < 40) throw new Error(`the QR only drew ${modules} modules`);
+    const file = await shot(page, "menu-get-app-qr");
+    await page.keyboard.press("Escape");
+    if (!(await until(async () => (await accountMenu.count()) === 0)))
+      throw new Error("Escape did not close the menu");
+    return `${modules} QR modules, Escape closes, ${file}`;
+  });
+
+  await step("Settings opens with the account on top", async () => {
+    await page.getByRole("button", { name: "Titumama" }).hover();
+    await accountMenu.getByRole("menuitem", { name: "Settings" }).click();
+    await page.waitForURL("**/settings", { timeout: 30_000 });
+    await page.getByText("Titumama").first().waitFor({ timeout: 90_000 });
+    // No composer on this route — hydrate on the Notifications switch.
+    await hydrated(page, '[role="switch"]');
+    const sections = (await page.getByRole("heading", { level: 2 }).allInnerTexts())
+      .map((t) => t.trim());
+    if (sections.join("|") !== "General|Personalization|Get Help")
+      throw new Error(`settings sections are: ${sections.join(" / ")}`);
+    const rows = ["Theme", "Notifications", "Chat Presets", "Expand Sidebar on Search", "Language", "Memory"];
+    for (const row of rows) {
+      if (!(await page.getByText(row, { exact: true }).first().isVisible()))
+        throw new Error(`the "${row}" row is missing`);
+    }
+    return `${sections.join(" / ")}, ${await shot(page, "settings")}`;
+  });
+
+  await step("pinning Dark re-paints the page, System gives it back", async () => {
+    // This context is colourScheme-light, so System means light and a working
+    // pin must flip every token and the wordmark with it.
+    const theme = page.getByRole("tablist", { name: "Theme" });
+    await theme.getByRole("tab", { name: "Dark" }).click();
+    if (
+      !(await until(async () => (await token(page, "--fennic-ground")) === "#1c1613"))
+    )
+      throw new Error(`pinning Dark left the ground at ${await token(page, "--fennic-ground")}`);
+    const cls = await page.evaluate(() => document.documentElement.className);
+    if (!/(^|\s)dark(\s|$)/.test(cls)) throw new Error(`html class is "${cls}", expected dark`);
+    await shot(page, "settings-theme-dark");
+    // The wordmark is on the home hero, not here — the pin rides along in
+    // localStorage, so go look where the wordmark actually is.
+    await page.goto(BASE_URL, { waitUntil: "domcontentloaded" });
+    await hideDevOverlay(page);
+    await page.getByRole("textbox", { name: "Chat message" }).waitFor({ timeout: 90_000 });
+    await hydrated(page);
+    const wordmark = await wordmarkSrc(page, "fennic-text-dark.png");
+    if (!wordmark || !wordmark.includes("fennic-text-dark"))
+      throw new Error(`the wordmark did not follow the pin (${wordmark ?? "not found"})`);
+    await shot(page, "home-theme-dark");
+    // Back to the tablist to give the page its System ground again.
+    await page.goto(`${BASE_URL}/settings`, { waitUntil: "domcontentloaded" });
+    await hideDevOverlay(page);
+    await page.getByRole("tablist", { name: "Theme" }).waitFor({ timeout: 90_000 });
+    await theme.getByRole("tab", { name: "System" }).click();
+    if (
+      !(await until(async () => (await token(page, "--fennic-ground")) === "#f7f5f3"))
+    )
+      throw new Error(`System left the ground at ${await token(page, "--fennic-ground")}`);
+    return "tokens + wordmark flip on Dark, back on System";
+  });
 
   await context.close();
 }
@@ -390,12 +690,15 @@ async function themePass(browser) {
     });
 
     await step(`${scheme} hero wordmark resolves to the right ink`, async () => {
-      // currentSrc, not src: the <picture> source only shows up post-resolution,
-      // and next/image leaves the <img>'s own src pointing at the light file.
-      const src = await page
-        .locator("picture img")
-        .first()
-        .evaluate((el) => el.currentSrc);
+      // The wordmark is the only Fennic image whose source is a fennic-text*
+      // file — the sidebar logo is the mark — so match on that rather than
+      // position: after the preferences store hydrates, the <picture> is
+      // replaced by a bare next/image, so "picture img" is not a stable hook.
+      // wordmarkSrc polls rather than sampling once: currentSrc stays empty
+      // until the browser loads the file, and the swap lands a beat after
+      // hydration.
+      const src = await wordmarkSrc(page, wordmark);
+      if (!src) throw new Error("no wordmark image found");
       const file = /fennic-text(-dark)?\.png/.exec(decodeURIComponent(src))?.[0];
       if (!src.includes(wordmark))
         throw new Error(`wordmark resolved to ${file ?? src}, expected ${wordmark}`);
@@ -630,6 +933,7 @@ async function main() {
   try {
     await desktopPass(browser);
     await navPass(browser);
+    await accountPass(browser);
     await workspacePass(browser);
     await themePass(browser);
     await mobilePass(browser);
